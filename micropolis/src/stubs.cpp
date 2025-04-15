@@ -333,7 +333,7 @@ void Micropolis::makeSound(const char *channel, const char *sound,
  * @return Value of the map at the given position.
  * @note Off-map positions are considered to contain #DIRT.
  */
-int Micropolis::getTile(int x, int y)
+int Micropolis::getTile(int x, int y) const
 {
     if (!testBounds(x, y)) {
         return DIRT;

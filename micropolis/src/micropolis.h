@@ -2600,7 +2600,7 @@ public:
 
     // Map
 
-    int getTile(int x, int y);
+    int getTile(int x, int y) const;
 
     void setTile(int x, int y, int tile);
 

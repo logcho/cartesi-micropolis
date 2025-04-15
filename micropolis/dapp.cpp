@@ -7,10 +7,56 @@
 #include "src/micropolis.h"
 #include "wallet.h"
 #include "util.h"
+#include "cartesi.h"
+
+std::unordered_map<std::string, Micropolis> cities;
+
+void createGameNotices(httplib::Client &cli, const Micropolis& game) {
+    // Convert the map data to a vector of uint16_t
+    std::vector<uint16_t> flattenedMap;
+    for (int x = 0; x < WORLD_W; x++) {
+        for (int y = 0; y < WORLD_H; y++) {
+            flattenedMap.push_back(game.getTile(x, y));
+        }
+    }
+    std::string map_payload = eth::uint16_array_to_hex(flattenedMap);
+    createNotice(cli, map_payload);
+}
 
 std::string handle_advance(httplib::Client &cli, picojson::value data)
 {
-    std::cout << "Received advance request data " << data << std::endl;
+    std::string address = data.get("metadata").get("address").to_str();
+    std::string payload = data.get("payload").to_str();
+    std::cout << "Address: " << address << std::endl;
+    std::cout << "Payload: " << payload << std::endl;
+
+    std::string decoded_payload = eth::hex_to_string(payload);
+    std::cout << "Decoded payload: " << decoded_payload << std::endl;
+    picojson::value parsed_payload;
+    std::string err = picojson::parse(parsed_payload, decoded_payload); 
+    if (!err.empty()) {
+        std::cout << "Error: " << err << std::endl;
+        return "reject";
+    }
+    std::string method = parsed_payload.get("method").to_str();
+    if(method == "createCity"){
+        if(cities.find(address) != cities.end()) return "reject";
+        cities[address] = Micropolis();
+        std::cout << "City created for address " << address << std::endl;
+        createGameNotices(cli, cities[address]);
+        return "accept";
+    }
+    if(method == "doTool"){
+        if(cities.find(address) == cities.end()) return "reject";
+        EditingTool tool = static_cast<EditingTool>(std::stoi(parsed_payload.get("tool").to_str()));
+        int x = std::stoi(parsed_payload.get("x").to_str());
+        int y = std::stoi(parsed_payload.get("y").to_str());
+        cities[address].doTool(tool, x, y);
+        std::cout << "Tool " << tool << " done for address " << address << " at (" << x << "," << y << ")" << std::endl;
+        createGameNotices(cli, cities[address]);
+        return "accept";
+    }
+
     return "accept";
 }
 
