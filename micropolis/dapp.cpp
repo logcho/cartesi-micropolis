@@ -25,7 +25,7 @@ void createGameNotices(httplib::Client &cli, const Micropolis& game) {
 
 std::string handle_advance(httplib::Client &cli, picojson::value data)
 {
-    std::string address = data.get("metadata").get("address").to_str();
+    std::string address = data.get("metadata").get("msg_sender").to_str();
     std::string payload = data.get("payload").to_str();
     std::cout << "Address: " << address << std::endl;
     std::cout << "Payload: " << payload << std::endl;
